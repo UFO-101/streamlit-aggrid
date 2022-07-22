@@ -7,7 +7,7 @@ import {
 import { ReactNode } from "react"
 
 import { AgGridReact } from 'ag-grid-react';
-import { ColumnApi, GridApi } from 'ag-grid-community'
+import { ColumnApi, GridApi, ApplyColumnStateParams } from 'ag-grid-community'
 //TODO: Lazy load this so grid doesn't start at enterprise version
 import { LicenseManager } from "ag-grid-enterprise";
 
@@ -205,6 +205,15 @@ class AgGrid extends StreamlitComponentBase<State> {
     for (var idx in this.gridOptions['preSelectedRows']) {
       this.api.selectIndex(this.gridOptions['preSelectedRows'][idx], true, true)
     }
+    if (this.props.args.columnState) {
+      let applyColumnStateParams: ApplyColumnStateParams = {
+        state: this.props.args.columnState,
+        applyOrder: true,
+      }
+      this.columnApi.applyColumnState(applyColumnStateParams)
+    }
+    if (this.props.args.filterModel)
+      this.api.setFilterModel(this.props.args.filterModel)
   }
 
   private fitColumns() {
@@ -265,7 +274,9 @@ class AgGrid extends StreamlitComponentBase<State> {
     let returnValue = {
       originalDtypes: this.frameDtypes,
       rowData: returnData,
-      selectedRows: this.api.getSelectedRows()
+      selectedRows: this.api.getSelectedRows(),
+      columnState: this.columnApi.getColumnState(),
+      filterModel: this.api.getFilterModel()
     }
 
     Streamlit.setComponentValue(returnValue)

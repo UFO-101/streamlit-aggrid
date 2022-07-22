@@ -20,6 +20,8 @@ class AgGridReturn(Mapping):
     """Class to hold AgGrid call return"""
     data: pd.DataFrame | str = None
     selected_rows: List[Mapping] = field(default_factory=list)
+    column_state: List[Mapping] = field(default_factory=list)
+    filter_model: List[Mapping] = field(default_factory=list)
 
     #Backwards compatibility with dict interface
     def __getitem__(self, __k):
@@ -115,6 +117,8 @@ else:
 def AgGrid(
     data: pd.DataFrame | str,
     gridOptions: typing.Dict=None ,
+    columnState: typing.List=None ,
+    filterModel: typing.Dict=None ,
     height: int =400,
     width=None,
     fit_columns_on_grid_load: bool=False,
@@ -141,6 +145,12 @@ def AgGrid(
         A dictionary of options for ag-grid. Documentation on www.ag-grid.com
         If None default grid options will be created with GridOptionsBuilder.from_dataframe() call. By default None
     
+    columnState : typing.List, optional
+        A dictionary containing the column state to be restored.
+
+    filterModel : typing.Dict, optional
+        A dictionary containing the filter model to be restored.
+
     height : int, optional
         The grid height, by default 400
     
@@ -263,10 +273,14 @@ def AgGrid(
 
     response = AgGridReturn()
     response.data = data
+    response.column_state = columnState
+    response.filter_model = filterModel
 
     try:
         component_value = _component_func(
             gridOptions=gridOptions,
+            columnState=columnState,
+            filterModel=filterModel,
             row_data=row_data,
             height=height, 
             width=width,
@@ -323,5 +337,14 @@ def AgGrid(
 
         response.data = frame
         response.selected_rows = component_value["selectedRows"]
+        response.column_state = component_value["columnState"]
+        response.filter_model = component_value["filterModel"]
     
     return response
+
+if not _RELEASE:
+    df = pd.read_csv('https://raw.githubusercontent.com/fivethirtyeight/data/master/airline-safety/airline-safety.csv')
+    filter_model = {'incidents_85_99': {'filterType': 'number', 'type': 'greaterThan', 'filter': 8}}
+    column_state = [{'colId': 'avail_seat_km_per_week', 'width': 106, 'hide': True, 'pinned': True, 'sort': None, 'sortIndex': None, 'aggFunc': None, 'rowGroup': True, 'rowGroupIndex': None, 'pivot': False, 'pivotIndex': None, 'flex': None}, {'colId': 'incidents_85_99', 'width': 179, 'hide': False, 'pinned': None, 'sort': None, 'sortIndex': None, 'aggFunc': None, 'rowGroup': False, 'rowGroupIndex': None, 'pivot': False, 'pivotIndex': None, 'flex': None},{'colId': 'airline', 'width': 100, 'hide': False, 'pinned': None, 'sort': 'asc', 'sortIndex': 0, 'aggFunc': None, 'rowGroup': False, 'rowGroupIndex': None, 'pivot': False, 'pivotIndex': None, 'flex': None}, {'colId': 'fatal_accidents_85_99', 'width': 196, 'hide': False, 'pinned': None, 'sort': None, 'sortIndex': None, 'aggFunc': None, 'rowGroup': False, 'rowGroupIndex': None, 'pivot': False, 'pivotIndex': None, 'flex': None}, {'colId': 'fatalities_85_99', 'width': 156, 'hide': False, 'pinned': None, 'sort': None, 'sortIndex': None, 'aggFunc': None, 'rowGroup': False, 'rowGroupIndex': None, 'pivot': False, 'pivotIndex': None, 'flex': None}, {'colId': 'incidents_00_14', 'width': 200, 'hide': False, 'pinned': None, 'sort': None, 'sortIndex': None, 'aggFunc': None, 'rowGroup': False, 'rowGroupIndex': None, 'pivot': False, 'pivotIndex': None, 'flex': None}, {'colId': 'fatal_accidents_00_14', 'width': 200, 'hide': False, 'pinned': None, 'sort': None, 'sortIndex': None, 'aggFunc': None, 'rowGroup': False, 'rowGroupIndex': None, 'pivot': False, 'pivotIndex': None, 'flex': None}, {'colId': 'fatalities_00_14', 'width': 200, 'hide': False, 'pinned': None, 'sort': None, 'sortIndex': None, 'aggFunc': None, 'rowGroup': False, 'rowGroupIndex': None, 'pivot': False, 'pivotIndex': None, 'flex': None}]
+    ag_grid_return = AgGrid(df, update_mode=GridUpdateMode.MANUAL, key=1, filterModel=filter_model, columnState=column_state)
+    print('ag_grid_return', ag_grid_return)

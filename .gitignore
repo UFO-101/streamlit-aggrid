@@ -6,6 +6,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Don't include map files (they're for front end debugging)
+*.map
+*.chunk.js.LICENSE.txt
+
 # C extensions
 *.so
 
